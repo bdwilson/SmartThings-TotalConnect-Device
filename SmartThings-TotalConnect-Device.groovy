@@ -35,21 +35,46 @@ preferences {
 }
 metadata {
 	definition (name: "TotalConnect Device", namespace: "bdwilson", author: "Brian Wilson") {
-		capability "Lock"
-		//capability "Polling"
-		capability "Switch"
-	}
+	capability "Lock"
+	capability "Polling"
+        capability "Refresh"
+	capability "Switch"
+        attribute "status", "string"
+}
 
-	simulator {
-		// TODO: define status and reply messages here
-	}
+simulator {
+	// TODO: define status and reply messages here
+}
 
-	tiles {
-		// Maybe someone will add Arm Away/Arm Stay/Disarm tiles for this??  And the home tile would show if it's armed/disarmed??
+tiles {
+   	// there is probably a better way to do this.
+	standardTile("statusstay", "device.status") {
+		state("Disarmed", label:'Disarmed', action:"switch.on",  icon:"st.Home.home4",    backgroundColor:"#79b821", nextState: "Armed Stay")
+		state("Armed Stay",  label:'Armed Stay', action:"switch.off",   icon:"st.Home.home4",  backgroundColor:"#f8fc02", nextState: "Disarmed")
+	}
+        standardTile("statusaway", "device.status") {
+		state("Disarmed", label:'Disarmed', action:"lock.lock",  icon:"st.Home.home3",    backgroundColor:"#79b821", nextState: "Armed Away")
+		state("Armed Away",  label:'Armed Away', action:"lock.unlock",   icon:"st.Home.home3",  backgroundColor:"#f00000", nextState: "Disarmed")
+	}
+	standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat") {
+		state("default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh")
+	}
+	standardTile("status", "device.status", canChangeIcon: true, canChangeBackground: true) {
+        	state("Disarmed", label:'Disarmed', action: "refresh.refresh", backgroundColor:"#79b821")
+		state("Armed Away",  label:'Armed Away', action: "refresh.refresh", backgroundColor:"#f00000")
+		state("Armed Stay",  label:'Armed Stay', action: "refresh.refresh", backgroundColor:"#f8fc02")
+	}
+	main "status"
+	details(["statusstay", "statusaway", "refresh"])
+	// Maybe someone will add Arm Away/Arm Stay/Disarm tiles for this??  And the home tile would show if it's armed/disarmed??
       
 	}
 }
 
+def poll() {
+	refresh()
+}
+	
 // Login Function. Returns SessionID for rest of the functions
 def login(token) {
 	log.debug "Executed login"
@@ -70,7 +95,7 @@ def logout(token) {
    	def paramsLogout = [
     		uri: "https://rs.alarmnet.com/TC21API/TC2.asmx/Logout",
     		body: [SessionID: token]
-    		]
+    	]
    	httpPost(paramsLogout) { responseLogout ->
         	log.debug "Smart Things has successfully logged out"
         }  
@@ -91,9 +116,10 @@ Map panelMetaData(token, locationId) {
         	lastSequenceNumber = response.data.PanelMetadataAndStatus.'@ConfigurationSequenceNumber'
         	partitionId = response.data.PanelMetadataAndStatus.Partitions.PartitionInfo.PartitionID
         	alarmCode = response.data.PanelMetadataAndStatus.Partitions.PartitionInfo.ArmingState
-                                                
-    	}
+                log.debug response.data.PanelMetadataAndStatus.Zones.inspect()
+   	}
 	//log.debug "AlarmCode is " + alarmCode
+    	//log.debug response.data.PanelMetadataAndStatus.Partitions.PartitionInfo.inspect()
   	return [alarmCode: alarmCode, lastSequenceNumber: lastSequenceNumber, lastUpdatedTimestampTicks: lastUpdatedTimestampTicks]
 } //Should return alarmCode, lastSequenceNumber & lastUpdateTimestampTicks
 
@@ -103,8 +129,8 @@ def armAway() {
     	def locationId = settings.locationId
     	def deviceId = settings.deviceId            
     	def paramsArm = [
-    		uri: "https://rs.alarmnet.com/TC21API/TC2.asmx/ArmSecuritySystem",
-    		body: [SessionID: token, LocationID: locationId, DeviceID: deviceId, ArmType: 0, UserCode: '-1']
+    			uri: "https://rs.alarmnet.com/TC21API/TC2.asmx/ArmSecuritySystem",
+    			body: [SessionID: token, LocationID: locationId, DeviceID: deviceId, ArmType: 0, UserCode: '-1']
     	]
    	httpPost(paramsArm) // Arming Function in away mode
         def metaData = panelMetaData(token, locationId) // Get AlarmCode
@@ -122,13 +148,13 @@ def armStay() {
         def locationId = settings.locationId
     	def deviceId = settings.deviceId
     	def paramsArm = [
-    		uri: "https://rs.alarmnet.com/TC21API/TC2.asmx/ArmSecuritySystem",
-    		body: [SessionID: token, LocationID: locationId, DeviceID: deviceId, ArmType: 1, UserCode: '-1']
+    			uri: "https://rs.alarmnet.com/TC21API/TC2.asmx/ArmSecuritySystem",
+    			body: [SessionID: token, LocationID: locationId, DeviceID: deviceId, ArmType: 1, UserCode: '-1']
     	]
    	httpPost(paramsArm) // Arming function in stay mode
     	def metaData = panelMetaData(token, locationId) // Gets AlarmCode
         while( metaData.alarmCode != 10203 ){ 
-        	pause(3000) // 3 Seconds Pause to relieve number of retried on while loop
+                pause(3000) // 3 Seconds Pause to relieve number of retried on while loop
                 metaData = panelMetaData(token, locationId)
         } 
         //log.debug "Home is now Armed for Night successfully"     
@@ -141,8 +167,8 @@ def disarm() {
    	def locationId = settings.locationId
     	def deviceId = settings.deviceId
         def paramsDisarm = [
-    		uri: "https://rs.alarmnet.com/TC21API/TC2.asmx/DisarmSecuritySystem",
-    		body: [SessionID: token, LocationID: locationId, DeviceID: deviceId, UserCode: '-1']
+    			uri: "https://rs.alarmnet.com/TC21API/TC2.asmx/DisarmSecuritySystem",
+    			body: [SessionID: token, LocationID: locationId, DeviceID: deviceId, UserCode: '-1']
     	]
    	httpPost(paramsDisarm)  
    	def metaData = panelMetaData(token, locationId) // Gets AlarmCode
@@ -155,30 +181,58 @@ def disarm() {
 	logout(token)
 }
 
+def refresh() {        
+	def token = login(token)
+        def locationId = settings.locationId
+    	def deviceId = settings.deviceId
+        log.debug "Doing refresh"
+   	//httpPost(paramsArm) // Arming function in stay mode
+    	def metaData = panelMetaData(token, locationId) // Gets AlarmCode
+ 	//log.debug metaData   
+        if (metaData.alarmCode == 10200) {
+        	log.debug "Status is: Disarmed"
+            	sendEvent(name: "status", value: "Disarmed", displayed: "true", description: "Refresh: Alarm is Disarmed") 
+        } else if (metaData.alarmCode == 10203) {
+        	log.debug "Status is: Armed Stay"
+         	sendEvent(name: "status", value: "Armed Stay", displayed: "true", description: "Refresh: Alarm is Armed Stay") 
+        } else if (metaData.alarmCode == 10201) {
+        	log.debug "Status is: Armed Away"
+            	sendEvent(name: "status", value: "Armed Away", displayed: "true", description: "Refresh: Alarm is Armed Away")
+        }
+        logout(token)
+    	sendEvent(name: "refresh", value: "true", displayed: "true", description: "Refresh Successful") 
+}
+
 // parse events into attributes
 def parse(String description) {
 	log.debug "Parsing '${description}'"
 }
 
-// handle commands.  If this isn't proof ST needs to handle a "Alarm/Monitoring"
-// capability, nothing is. 
+// handle commands
 def lock() {
 	log.debug "Executing 'Arm Away'"
     	armAway()
+    	sendEvent(name: "lock", value: "lock", displayed: "true", description: "Arming Away") 
+    	sendEvent(name: "status", value: "Aramed Away", displayed: "true", description: "Updating Status: Armed Away")
 }
 
 def unlock() {
 	log.debug "Executing 'Disarm'"
     	disarm()
+    	sendEvent(name: "unlock", value: "unlock", displayed: "true", description: "Disarming") 
+    	sendEvent(name: "status", value: "Disarmed", displayed: "true", description: "Updating Status: Disarmed") 
 }
 
 def on() {
 	log.debug "Executing 'Arm Stay'"
     	armStay()
+    	sendEvent(name: "switch", value: "on", displayed: "true", description: "Arming Stay") 
+    	sendEvent(name: "status", value: "Armed Stay", displayed: "true", description: "Updating Status: Alarm is Armed Stay") 
 }
 
 def off() {
 	log.debug "Executing 'Disarm'"
     	disarm()
+    	sendEvent(name: "switch", value: "off", displayed: "true", description: "Disarming") 
+    	sendEvent(name: "status", value: "Disarmed", displayed: "true", description: "Updating Status: Disarmed") 
 }
-
