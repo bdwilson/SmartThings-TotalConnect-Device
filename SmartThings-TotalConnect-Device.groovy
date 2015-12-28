@@ -50,19 +50,19 @@ tiles {
 	// there is probably a better way to do this.
 	standardTile("statusstay", "device.status") {
 		state("Disarmed", label:'Disarmed', action:"switch.on",	 icon:"st.Home.home4",	  backgroundColor:"#79b821", nextState: "Armed Stay")
-		state("Armed Stay",	 label:'Armed Stay', action:"switch.off",	icon:"st.Home.home4",  backgroundColor:"#f8fc02", nextState: "Disarmed")
+		state("Armed Stay", label:'Armed Stay', action:"switch.off",	icon:"st.Home.home4",  backgroundColor:"#f8fc02", nextState: "Disarmed")
 	}
 	standardTile("statusaway", "device.status") {
 		state("Disarmed", label:'Disarmed', action:"lock.lock",	 icon:"st.Home.home3",	  backgroundColor:"#79b821", nextState: "Armed Away")
-		state("Armed Away",	 label:'Armed Away', action:"lock.unlock",	 icon:"st.Home.home3",	backgroundColor:"#f00000", nextState: "Disarmed")
+		state("Armed Away", label:'Armed Away', action:"lock.unlock",	 icon:"st.Home.home3",	backgroundColor:"#f00000", nextState: "Disarmed")
 	}
 	standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat") {
 		state("default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh")
 	}
 	standardTile("status", "device.status", canChangeIcon: true, canChangeBackground: true) {
 		state("Disarmed", label:'Disarmed', action: "refresh.refresh", backgroundColor:"#79b821")
-		state("Armed Away",	 label:'Armed Away', action: "refresh.refresh", backgroundColor:"#f00000")
-		state("Armed Stay",	 label:'Armed Stay', action: "refresh.refresh", backgroundColor:"#f8fc02")
+		state("Armed Away", label:'Armed Away', action: "refresh.refresh", backgroundColor:"#f00000")
+		state("Armed Stay", label:'Armed Stay', action: "refresh.refresh", backgroundColor:"#f8fc02")
 	}
 	main "status"
 	details(["statusstay", "statusaway", "refresh"])
