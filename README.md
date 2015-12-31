@@ -4,9 +4,15 @@ I didn't do any real work here, @mhatrey did (https://github.com/mhatrey/TotalCo
 
 Installation
 ---
-Please see his
-[thread](https://community.smartthings.com/t/new-app-integration-with-honeywell-totalconnect-alarm-monitoring-system/)
-about how to configure the settings for this ST Device.
+Please install the [SmartThings TotalConnect Tester
+SmartApp](SmartThings-TotalConnect-Tester.groovy) to determine your LocationID
+and DeviceID required for this device driver.  Once you figure out your
+LocationID and DeviceID, then you can proceed to the steps below.  Make sure
+your TotalConnect username has been configured to have the ARM/DISARM PIN
+already configured in the GUI so that it's not required for whatever user you
+select.  It's recommended you create a user specifically for this application
+because of this.  For additional info on this, you can check this 
+[thread](https://community.smartthings.com/t/new-app-integration-with-honeywell-totalconnect-alarm-monitoring-system/).
 
 Then, 
 
