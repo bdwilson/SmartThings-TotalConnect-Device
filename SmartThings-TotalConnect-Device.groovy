@@ -69,7 +69,7 @@ tiles {
 		}
 
 		main "toggle"
-		details(["toggle", "statusaway", "statusstay", "statusdisarm", "refresh"])`
+		details(["toggle", "statusaway", "statusstay", "statusdisarm", "refresh"])
 	}
 }
 
