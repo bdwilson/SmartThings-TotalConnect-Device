@@ -36,7 +36,6 @@ preferences {
 metadata {
 	definition (name: "TotalConnect Device", namespace: "bdwilson", author: "Brian Wilson") {
 	capability "Lock"
-	capability "Polling"
 	capability "Refresh"
 	capability "Switch"
 	attribute "status", "string"
@@ -73,10 +72,6 @@ tiles {
 	}
 }
 
-def poll() {
-	refresh()
-}
-	
 // Login Function. Returns SessionID for rest of the functions
 def login(token) {
 	log.debug "Executed login"
@@ -214,6 +209,7 @@ def lock() {
 	armAway()
 	sendEvent(name: "lock", value: "lock", displayed: "true", description: "Arming Away") 
 	sendEvent(name: "status", value: "Arming", displayed: "true", description: "Updating Status: Arming System")
+	runIn(15,refresh)
 }
 
 def unlock() {
@@ -221,6 +217,7 @@ def unlock() {
 	disarm()
 	sendEvent(name: "unlock", value: "unlock", displayed: "true", description: "Disarming") 
 	sendEvent(name: "status", value: "Disarming", displayed: "true", description: "Updating Status: Disarming System") 
+	runIn(15,refresh)
 }
 
 def on() {
@@ -228,6 +225,7 @@ def on() {
 	armStay()
 	sendEvent(name: "switch", value: "on", displayed: "true", description: "Arming Stay") 
 	sendEvent(name: "status", value: "Arming", displayed: "true", description: "Updating Status: Arming System") 
+	runIn(15,refresh)
 }
 
 def off() {
@@ -235,4 +233,5 @@ def off() {
 	disarm()
 	sendEvent(name: "switch", value: "off", displayed: "true", description: "Disarming") 
 	sendEvent(name: "status", value: "Disarmed", displayed: "true", description: "Updating Status: Disarming System") 
+	runIn(15,refresh)
 }
