@@ -131,11 +131,16 @@ def armAway() {
 	]
 	httpPost(paramsArm) // Arming Function in away mode
 	def metaData = panelMetaData(token, locationId) // Get AlarmCode
-	while( metaData.alarmCode != 10201 ){ 
-		pause(3000) // 3 Seconds Pause to relieve number of retried on while loop
-		metaData = panelMetaData(token, locationId)
-	}  
-	sendPush("Armed Away is now active.")	  
+	if (metaData.alarmCode == 10201) {
+		log.debug "Status is: Already Armed Away"
+		sendEvent(name: "status", value: "Armed Away", displayed: "true", description: "Refresh: Alarm is Armed Away") 
+	} else if (metaData.alarmCode == 10203) {
+		log.debug "Status is: Armed Stay - Please Disarm First"
+		sendEvent(name: "status", value: "Armed Stay", displayed: "true", description: "Refresh: Alarm is Armed Stay") 
+    } else {
+		log.debug "Status is: Arming"
+        httpPost(paramsArm) // Arming Function in away mode
+    }
 	logout(token)
 }
 
@@ -149,12 +154,17 @@ def armStay() {
 	]
 	httpPost(paramsArm) // Arming function in stay mode
 	def metaData = panelMetaData(token, locationId) // Gets AlarmCode
-	while( metaData.alarmCode != 10203 ){ 
-		pause(3000) // 3 Seconds Pause to relieve number of retried on while loop
-		metaData = panelMetaData(token, locationId)
-	} 
-	sendPush("Armed Stay is now active.")
-	logout(token)
+	if (metaData.alarmCode == 10203) {
+		log.debug "Status is: Already Armed Stay"
+		sendEvent(name: "status", value: "Armed Stay", displayed: "true", description: "Refresh: Alarm is Armed Stay") 
+	} else if (metaData.alarmCode == 10201) {
+		log.debug "Status is: Armed Away - Please Disarm First"
+		sendEvent(name: "status", value: "Armed Away", displayed: "true", description: "Refresh: Alarm is Armed Away") 
+  	} else {
+		log.debug "Status is: Arming"
+        httpPost(paramsArm) // Arming function in stay mode
+    }
+    logout(token)
 }
 
 def disarm() {
@@ -167,12 +177,13 @@ def disarm() {
 	]
 	httpPost(paramsDisarm)	
 	def metaData = panelMetaData(token, locationId) // Gets AlarmCode
-	while( metaData.alarmCode != 10200 ){ 
-		pause(3000) // 3 Seconds Pause to relieve number of retried on while loop
-		metaData = panelMetaData(token, locationId)
-	}
-	// log.debug "Home is now Disarmed successfully"   
-	sendPush("Home is now Disarmed successfully")
+	if (metaData.alarmCode == 10200) {
+		log.debug "Status is: Already Disarmed"
+		sendEvent(name: "status", value: "Disarmed", displayed: "true", description: "Refresh: Alarm is Disarmed") 
+	} else {
+		log.debug "Status is: Disarming"
+		httpPost(paramsDisarm)	
+	} 
 	logout(token)
 }
 
